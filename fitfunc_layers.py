@@ -4,7 +4,6 @@ import scipy.special
 import pyRefFit
 
 
-
 def loadParams ( paramsFile ):
 
 	params = np.loadtxt(paramsFile, unpack=True)
@@ -12,11 +11,11 @@ def loadParams ( paramsFile ):
 	paramsDict = {}
 
 	for n,k in enumerate(('I0', 'bkg', 'rho0', 'rhoInf', 'sigInf')):
-		paramsDict[k] =  pyRefFit.parameter(params[0,n], params[1,n], params[2,n], False)
+		paramsDict[k] =  pyRefFit.parameter(params[0, n], params[1, n], params[2, n], False)
 
 	for l in range(5, len(params[0,:]), 3):
 		for i,k in enumerate(('r', 'd', 's')):
-			paramsDict['%s%d'%(k,((l-5)/3)+1)] = pyRefFit.parameter(params[0,l+i], params[1,l+i], params[2,l+i], False)
+			paramsDict['%s%d'%(k,((l-5)/3)+1)] = pyRefFit.parameter(params[0, l + i], params[1, l + i], params[2, l + i], False)
 
 	#print(paramsDict['rhoInf'].v, paramsDict['rhoInf'].l, paramsDict['rhoInf'].u, paramsDict['rhoInf'].f)	
 

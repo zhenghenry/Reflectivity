@@ -8,8 +8,7 @@ from pylab import *
 import sys
 import matplotlib.gridspec as gridspec
 
-import pyRefFit
-from Reflectivity import fitfunc_layers as fitfunc
+import fitfunc_layers as fitfunc, pyRefFit
 
 data   = pyRefFit.loadRefl(sys.argv[1])
 params = pyRefFit.loadParams(sys.argv[2])

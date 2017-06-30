@@ -1,0 +1,13 @@
+# init	lower	upper
+1.	1.	1.	#I0
+0	0	0	#bkg
+#
+0	0	0	# rho_0
+0.709	0.709	0.709	# rho_inf
+6	2	12	# sig_inf
+#
+0.3	0.2	0.5	# rho_3
+220	200	240	# d_3
+6	2	12	# sig_3
+# vim: set syntax=sh:
+# vim: set ts=10:
