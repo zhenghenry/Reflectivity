@@ -9,9 +9,7 @@ import sys
 import matplotlib.gridspec as gridspec
 
 import pyRefFit
-import fitfunc_layers as fitfunc
-
-
+from Reflectivity import fitfunc_layers as fitfunc
 
 data   = pyRefFit.loadRefl(sys.argv[1])
 params = pyRefFit.loadParams(sys.argv[2])
