@@ -65,6 +65,8 @@ i0 = args.I0
 lam = args.lam
 
 
+
+
 # #==============================================================
 # #===> Set the title of output-graph
 # #==============================================================
@@ -86,6 +88,25 @@ thc=[1.0,1.01600,1.02343,1.05248,1.03896,1.05287,0.98626,1.00244,1.00671,1.0226,
 # #==============================================================
 # individual files for intensity from unspeced data
 chi, mon, curratt, det = np.loadtxt(args.inputFiles[0], unpack=True, usecols = (0,4,9,-1))
+
+def chi_data(paramsFile):
+	chi = np.loadtxt(paramsFile[0], unpack = True, usecols = 0)
+	return chi
+
+def mon_data(paramsFile):
+	mon = np.loadtxt(paramsFile[0], unpack = True, usecols = 4)
+	return mon
+
+def curratt_data(paramsFile):
+	curratt = np.loadtxt(paramsFile[0], unpack = True, usecols = 9)
+	return curratt
+
+def det_data(paramsFile):
+	det = np.loadtxt(paramsFile[0], unpack = True, usecols = -1)
+	ii = det
+	for i in range(len(det)):
+		ii[i] = det[i] * exp(curratt_data(paramsFile)[i] * foil_thickness/attlength * thc[int(curratt_data(paramsFile)[i])])/mon_data(paramsFile)[i]
+	return ii
 
 # correct for "wrong" absorbers
 ii = det
