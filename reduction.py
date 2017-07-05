@@ -4,6 +4,16 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
 
+def variable_data(paramsFile, filler=',', param="Variable"):
+    name = np.array(np.genfromtxt(paramsFile, comments="!!!", dtype=None, delimiter=',', max_rows=1, names=True))
+    name = name.dtype.names
+    for i in name:
+        if i == param:
+            col = name.index(i)
+    variable = np.loadtxt(paramsFile, delimiter=filler, skiprows=1, unpack=True, usecols=col)
+    return variable
+
+
 def theta_data(paramsFile, filler=',', param="Theta"):
     name = np.array(np.genfromtxt(paramsFile, comments="!!!", dtype=None, delimiter=',', max_rows=1, names=True))
     name = name.dtype.names
