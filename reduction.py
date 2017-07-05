@@ -100,7 +100,7 @@ def detector_data(paramsFile, bkgFile=None, filler=',', param="Detector", param_
     return final_detector, new_detector, final_bkg_detector
 
 
-def plotData(final_detector, new_detector, final_bkg_detector, theta, i0=1.76e7, param="I0", lam=1.078, beam=0.06,
+def plotData(final_detector, new_detector, final_bkg_detector, theta, i0=1.76e7, lam=1.078, beam=0.06,
              size=3.14, save=True, filename='outputFile'):
     final_detector = np.array(final_detector)
     new_detector = np.array(new_detector)
