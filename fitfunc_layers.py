@@ -17,7 +17,7 @@ def loadParams ( paramsFile ):
 		for i,k in enumerate(('r', 'd', 's')):
 			paramsDict['%s%d'%(k,((l-5)/3)+1)] = pyRefFit.parameter(params[0, l + i], params[1, l + i], params[2, l + i], False)
 
-	#print(paramsDict['rhoInf'].v, paramsDict['rhoInf'].l, paramsDict['rhoInf'].u, paramsDict['rhoInf'].f)	
+	print(paramsDict['rhoInf'].v, paramsDict['rhoInf'].l, paramsDict['rhoInf'].u, paramsDict['rhoInf'].f)
 
 	return paramsDict
 

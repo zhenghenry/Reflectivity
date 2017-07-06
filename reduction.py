@@ -14,24 +14,6 @@ def variable_data(paramsFile, filler=',', param="Variable"):
     return variable
 
 
-def theta_data(paramsFile, filler=',', param="Theta"):
-    name = np.array(np.genfromtxt(paramsFile, comments="!!!", dtype=None, delimiter=',', max_rows=1, names=True))
-    name = name.dtype.names
-    for i in name:
-        if i == param:
-            col = name.index(i)
-    theta = np.loadtxt(paramsFile, delimiter=filler, skiprows=1, unpack=True, usecols=col)
-    return theta
-
-
-def monitor_data(paramsFile, filler=',', param="Monitor"):
-    name = np.array(np.genfromtxt(paramsFile, comments="!!!", dtype=None, delimiter=',', max_rows=1, names=True))
-    name = name.dtype.names
-    for i in name:
-        if i == param:
-            col = name.index(i)
-    monitor = np.loadtxt(paramsFile, delimiter=filler, skiprows=1, unpack=True, usecols=col)
-    return monitor
 
 
 def foil_data(paramsFile, filler=',', param="Foils"):
@@ -54,22 +36,20 @@ def foil_data(paramsFile, filler=',', param="Foils"):
 
 
 def detector_data(paramsFile, bkgFile=None, filler=',', param="Detector", param_2="Foils", param_3="Detector",
-                  param_4="Monitor", sep_bkg=False, abs=[exp(1.444), exp(2.74), exp(5.316), exp(10.622)]):
+                  param_4="Monitor", sep_bkg=True, abs=[exp(1.444), exp(2.74), exp(5.316), exp(10.622)]):
     name = np.array(np.genfromtxt(paramsFile, comments="!!!", dtype=None, delimiter=filler, max_rows=1, names=True))
     name = name.dtype.names
     for i in name:
         if i == param:
             col = name.index(i)
     detector = np.loadtxt(paramsFile, delimiter=filler, skiprows=1, unpack=True, usecols=col)
-    new_detector = detector
-    i = 0
-    while i < len(detector):
-        abs_corrected = np.array(abs) * foil_data(paramsFile, param=param_2)[i]
-        abs_corrected = abs_corrected[abs_corrected != 0]
-        new_detector[i] = detector[i] * np.prod(abs_corrected) / monitor_data(paramsFile, param=param_4)[i]
-        i += 1
+    foil = np.array(foil_data(paramsFile, param=param_2))
+    monitor = np.array(variable_data(paramsFile, param=param_4))
+
 
     if sep_bkg == True:
+        bkg_foil = np.array(foil_data(bkgFile, param=param_2))
+        bkg_monitor = np.array(variable_data(bkgFile, param=param_4))
         bkg_name = np.array(
             np.genfromtxt(bkgFile, comments="!!!", dtype=None, delimiter=filler, max_rows=1, names=True))
         bkg_name = bkg_name.dtype.names
@@ -77,52 +57,62 @@ def detector_data(paramsFile, bkgFile=None, filler=',', param="Detector", param_
             if i == param_3:
                 bkg_col = bkg_name.index(i)
         bkg_detector = np.loadtxt(bkgFile, delimiter=filler, skiprows=1, unpack=True, usecols=bkg_col)
-        new_bkg_detector = bkg_detector
+
+        bkg_detector = np.concatenate((np.zeros(len(detector) - len(bkg_detector)), bkg_detector), axis=0)
+        bkg_foil = np.concatenate((np.zeros((len(foil) - len(bkg_foil), 4)), bkg_foil), axis=0)
+        bkg_monitor = np.concatenate((np.ones(len(monitor) - len(bkg_monitor)), bkg_monitor), axis=0)
+        detector_error = []
         i = 0
-        while i < len(bkg_detector):
-            abs_corrected = np.array(abs) * foil_data(bkgFile, param=param_2)[i]
+        while i < len(detector):
+            abs_corrected = np.array(abs) * foil[i]
             abs_corrected = abs_corrected[abs_corrected != 0]
-            new_bkg_detector[i] = bkg_detector[i] * np.prod(abs_corrected) / monitor_data(bkgFile, param=param_4)[i]
+            bkg_abs_corrected = np.array(abs) * bkg_foil[i]
+            bkg_abs_corrected = bkg_abs_corrected[bkg_abs_corrected != 0]
+            detector_error.append(np.sqrt(detector[i]*(np.prod(abs_corrected)**2)/monitor[i]**2+bkg_detector[i]*(np.prod(bkg_abs_corrected)**2)/bkg_monitor[i]**2))
+            detector[i] = detector[i] * np.prod(abs_corrected) / monitor[i]
+            bkg_detector[i] = bkg_detector[i] * np.prod(bkg_abs_corrected) / bkg_monitor[i]
+            detector[i] = detector[i] - bkg_detector[i]
             i += 1
-        final_bkg_detector = np.concatenate((np.zeros(len(new_detector) - len(new_bkg_detector)), new_bkg_detector),
-                                            axis=0)
-        final_detector = new_detector - final_bkg_detector
 
     if sep_bkg == False:
-        bkg_name = np.array(np.genfromtxt(paramsFile), comments="!!!", dtype=None, delimiter=filler, max_rows=1,
-                            names=True)
+        bkg_name = np.array(np.genfromtxt(paramsFile, comments="!!!", dtype=None, delimiter=filler, max_rows=1,
+                            names=True))
         bkg_name = bkg_name.dtype.names
         for i in bkg_name:
             if i == param_3:
                 bkg_col = bkg_name.index(i)
         bkg_detector = np.loadtxt(paramsFile, delimiter=filler, skiprows=1, unpack=True, usecols=bkg_col)
-        new_bkg_detector = bkg_detector
+        detector_error = []
         i = 0
         while i < len(bkg_detector):
-            abs_corrected = np.array(abs) * foil_data(bkgFile, param=param_2)[i]
+            abs_corrected = np.array(abs) * foil[i]
             abs_corrected = abs_corrected[abs_corrected != 0]
-            new_bkg_detector[i] = bkg_detector[i] * np.prod(abs_corrected) / monitor_data(bkgFile, param=param_4)[i]
-            print(new_bkg_detector[i])
+            detector_error.append(np.sqrt(
+                (detector[i] + bkg_detector[i]) * (
+                np.prod(abs_corrected) ** 2) / monitor[i] ** 2))
+            detector[i] = detector[i] * np.prod(abs_corrected) / monitor[i]
+            bkg_detector[i] = bkg_detector[i] * np.prod(abs_corrected) / monitor[i]
+            detector[i] = detector[i] - bkg_detector[i]
             i += 1
-        final_bkg_detector = np.concatenate((np.zeros(len(new_detector) - len(new_bkg_detector)), new_bkg_detector),
-                                            axis=0)
-        final_detector = new_detector - final_bkg_detector
-    return final_detector, new_detector, final_bkg_detector
+
+    return detector, detector_error, bkg_detector
 
 
-def plotData(final_detector, new_detector, final_bkg_detector, theta, i0=1.76e7, lam=1.078, beam=0.06,
+def plotData(detector, detector_error, bkg_detector, theta, i0=1.76e7, lam=1.078, beam=0.06,
              size=3.14, save=True, filename='outputFile'):
-    final_detector = np.array(final_detector)
-    new_detector = np.array(new_detector)
-    final_bkg_detector = np.array(final_bkg_detector)
+    detector = np.array(detector)
+    bkg_detector = np.array(bkg_detector)
+    new_detector = detector + bkg_detector
+    detector_error = np.array(detector_error)
     theta = np.array(theta)
     qz = 4 * np.pi / lam * np.sin(theta / 180 * np.pi)
-    i0_corrected = final_detector / i0
+    i0_corrected = detector / i0
+    detector_error = detector_error/i0
     fp_corrected = i0_corrected
 
     x = beam * 4 * np.pi / lam / qz
     fp_corrected[x >= float(size)] = (fp_corrected * (x / float(size)))[x >= float(size)]
-
+    detector_error[x >= float(size)] = (detector_error * (x / float(size)))[x >= float(size)]
     xrr = fp_corrected
     np.seterr(divide='ignore', invalid='ignore')
 
@@ -155,13 +145,13 @@ def plotData(final_detector, new_detector, final_bkg_detector, theta, i0=1.76e7,
     ax1.set_ylabel("reflectivity")
     ax1.semilogy(qz, new_detector, marker="o", markerfacecolor='m', markeredgecolor='m', markersize=3,
                  markeredgewidth=0.8, label='int = det x exp(curratt * foil_thickness / attlength * thc)  / mon')
-    ax1.semilogy(qz, final_bkg_detector, marker="o", markerfacecolor=RED, markeredgecolor=RED, markersize=3,
+    ax1.semilogy(qz, bkg_detector, marker="o", markerfacecolor=RED, markeredgecolor=RED, markersize=3,
                  markeredgewidth=0.8, label='bg = det x exp(curratt * foil_thickness / attlength * thc)  / mon')
-    ax1.semilogy(qz, final_detector, marker="o", markerfacecolor='g', markeredgecolor='g', markersize=3,
+    ax1.semilogy(qz, detector, marker="o", markerfacecolor='g', markeredgecolor='g', markersize=3,
                  markeredgewidth=0.8, label='bg_corr = int -bg')
     ax1.semilogy(qz, xrr, marker="o", markerfacecolor='k', markeredgecolor='k', markersize=3,
                  markeredgewidth=0.8, label='footprint corrected = final xrr --> is saved')
-
+    ax1.errorbar(qz, xrr, yerr=detector_error, linestyle='None', color=GRY, capsize=0, linewidth=3)
     ax1.axvline(x=amax(qz[x >= float(size)]), color='k')
 
     # make a legend
